@@ -1,7 +1,7 @@
 import { ExecuteCodeTaskHandler } from "./task-handlers/ExecuteCodeTaskHandler";
 import { Task, TaskHandler } from "./TaskHandler";
 import { formatTaskError } from "./ErrorUtils";
-import { extractMinorVersion, isCompatibleVersion } from "./VersionCompatibility";
+import type { PluginConnectionInit } from "../../common/src";
 
 /**
  * indicates whether the plugin is running in an environment with the Penpot-integrated remote MCP server
@@ -9,7 +9,18 @@ import { extractMinorVersion, isCompatibleVersion } from "./VersionCompatibility
  */
 const isIntegratedRemoteMcp = !!mcp;
 
-mcp?.setMcpStatus("connecting");
+/**
+ * Extracts the major.minor.patch prefix from a version string.
+ *
+ * @param version - a version string starting with major.minor.patch
+ * @returns the major.minor.patch prefix, or the original string if it does not match
+ */
+function extractVersionPrefix(version: string): string {
+    const match = version.match(/^(\d+\.\d+\.\d+)/);
+    return match ? match[1] : version;
+}
+
+let uiInitialized = false;
 
 /**
  * Registry of all available task handlers.
@@ -24,8 +35,11 @@ penpot.ui.open("Penpot MCP Plugin", `?theme=${penpot.theme}`, {
 } as any);
 
 // Register message handlers
-penpot.ui.onMessage<string | { id: string; type?: string; status?: string; task: string; params: any }>((message) => {
+penpot.ui.onMessage<
+    string | { id: string; type?: string; status?: string; sessionId?: string; task: string; params: any }
+>((message) => {
     if (typeof message === "object" && message.type === "ui-initialized") {
+        uiInitialized = true;
         // Inform the UI about the operating mode
         penpot.ui.sendMessage({
             type: "mcp-mode",
@@ -42,16 +56,26 @@ penpot.ui.onMessage<string | { id: string; type?: string; status?: string; task:
                 penpotVersion: penpotVersionPrefix,
             });
         }
-        // Initiate connection to remote MCP server (if enabled)
-        if (isIntegratedRemoteMcp) {
+        // connect only when requested in this workspace
+        if (isIntegratedRemoteMcp && mcp?.isConnectionRequested()) {
             penpot.ui.sendMessage({
                 type: "start-server",
                 url: mcp?.getServerUrl(),
                 token: mcp?.getToken(),
             });
         }
+    } else if (typeof message === "object" && message.type === "connection-metadata-request") {
+        const file = penpot.currentFile;
+        if (file && message.sessionId) {
+            const initialization: PluginConnectionInit & { penpotUserSessionId?: string } = {
+                type: "initialize",
+                session: { sessionId: message.sessionId, fileId: file.id, fileName: file.name },
+                penpotUserSessionId: penpot.currentUser.sessionId,
+            };
+            penpot.ui.sendMessage(initialization);
+        }
     } else if (typeof message === "object" && message.type === "update-connection-status") {
-        mcp?.setMcpStatus(message.status || "unknown");
+        mcp?.setMcpStatus(message.status || "unknown", message.sessionId);
     } else if (typeof message === "object" && message.task && message.id) {
         // Handle plugin tasks submitted by the MCP server
         handlePluginTaskRequest(message).catch((error) => {
@@ -102,6 +126,7 @@ if (mcp) {
         });
     });
     mcp.on("connect", async () => {
+        if (!uiInitialized) return;
         penpot.ui.sendMessage({
             type: "start-server",
             url: mcp?.getServerUrl(),
