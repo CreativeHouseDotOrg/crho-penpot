@@ -255,7 +255,12 @@
                      (rx/take 1)
                      (rx/map deref)
                      (rx/filter some?)
-                     (rx/map init-mcp-plugin))
+                     ;; crho: when MCP is enabled and the key is valid, request
+                     ;; the connection before the plugin starts; the plugin
+                     ;; connects on load when a connection is requested.
+                     (rx/mapcat (fn [token]
+                                  (rx/of (connect-mcp)
+                                         (init-mcp-plugin token)))))
                 (rx/empty))
 
               (->> mbc/stream
