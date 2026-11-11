@@ -17,7 +17,7 @@
    [app.main.data.profile :as dp]
    [app.main.data.websocket :as ws]
    [app.main.data.workspace.mcp :as mcp]
-   [app.main.errors]
+   [app.main.errors :as errors]
    [app.main.features :as feat]
    [app.main.rasterizer :as thr]
    [app.main.store :as st]
