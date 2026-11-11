@@ -14,6 +14,7 @@
    [app.config :as cf]
    [app.main.broadcast :as mbc]
    [app.main.data.event :as ev]
+   [app.main.data.workspace.mcp :as mcp]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.profile :as du]
@@ -531,7 +532,13 @@
 
         (when (and token (not token-valid?))
           [:div {:class (stl/css :mcp-server-switch-cover)
-                 :on-click handle-open-modal-regenerate}])]]]
+                 :on-click handle-open-modal-regenerate}])]
+
+       (when show-enabled?
+         [:div {:class (stl/css :mcp-server-switch)}
+          [:> switch* {:label (tr "integrations.mcp-server.auto-connect")
+                       :default-checked (mcp/auto-connect?)
+                       :on-change mcp/set-auto-connect!}]])]]
 
      (when (some? token)
        [:div {:class (stl/css :mcp-server-key)}

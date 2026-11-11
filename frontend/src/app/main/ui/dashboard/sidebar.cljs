@@ -256,7 +256,6 @@
         (get default-project :id)
 
         team-id     (get team :id)
-        mcp-state   (mf/deref refs/mcp)
 
         projects?   (= section :dashboard-recent)
         fonts?      (= section :dashboard-fonts)
@@ -383,15 +382,6 @@
                      :keyboard-action go-libs-with-key}
            [:span {:class (stl/css :element-title)} (tr "labels.shared-libraries")]]]]]
 
-
-       (when (and (contains? cf/flags :mcp)
-                  (:enabled mcp-state)
-                  (:token-valid mcp-state))
-         [:div {:class (stl/css :sidebar-content-section)}
-          [:> mcp-menu* {:dashboard true
-                         :is-mcp-connected (= "connected" (:connection-status mcp-state))
-                         :is-connection-requested (:connection-requested mcp-state)
-                         :session-id (:session-id mcp-state)}]])
 
        [:div {:class (stl/css :sidebar-content-section)
               :data-testid "pinned-projects"}
@@ -570,6 +560,7 @@
 (mf/defc profile-section*
   [{:keys [profile team]}]
   (let [teams            (mf/deref refs/teams)
+        mcp-state        (mf/deref refs/mcp)
         show-profile-menu* (mf/use-state false)
         show-profile-menu? (deref show-profile-menu*)
         sub-menu*      (mf/use-state false)
@@ -680,6 +671,15 @@
          (if (show-subscription-dashboard-banner? profile)
            [:> dashboard-cta* {:profile profile}]
            [:> subscription-sidebar* {:profile profile}])))
+
+     ;; crho: MCP card, only when MCP is enabled in Settings > Integrations
+     (when (and (contains? cf/flags :mcp)
+                (:enabled mcp-state)
+                (:token-valid mcp-state))
+       [:> mcp-menu* {:dashboard true
+                      :is-mcp-connected (= "connected" (:connection-status mcp-state))
+                      :is-connection-requested (:connection-requested mcp-state)
+                      :session-id (:session-id mcp-state)}])
 
 
      (when (and team profile)

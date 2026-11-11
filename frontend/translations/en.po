@@ -2518,6 +2518,10 @@ msgstr "The MCP key will expire on %s"
 msgid "integrations.mcp-key.will-not-expire"
 msgstr "The MCP key has no expiration date"
 
+#: src/app/main/ui/settings/integrations.cljs
+msgid "integrations.mcp-server.auto-connect"
+msgstr "Automatically connect MCP on startup"
+
 #: src/app/main/ui/settings/integrations.cljs:498
 msgid "integrations.mcp-server.description"
 msgstr ""

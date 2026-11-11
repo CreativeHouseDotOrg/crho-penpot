@@ -17,6 +17,7 @@
    [app.main.data.profile :as du]
    [app.main.store :as st]
    [app.plugins.register :as preg]
+   [app.util.storage :as storage]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [beicon.v2.operators :as rxo]
@@ -43,6 +44,16 @@
 
 (defonce interval-sub
   (atom nil))
+
+;; crho: per-user, per-browser preference (the backend profile props schema is
+;; closed, so this is kept in the browser storage). Default: enabled.
+(defn auto-connect?
+  []
+  (not= false (get @storage/user ::auto-connect)))
+
+(defn set-auto-connect!
+  [value]
+  (swap! storage/user assoc ::auto-connect (boolean value)))
 
 (defn connect-mcp
   []
@@ -259,8 +270,10 @@
                      ;; the connection before the plugin starts; the plugin
                      ;; connects on load when a connection is requested.
                      (rx/mapcat (fn [token]
-                                  (rx/of (connect-mcp)
-                                         (init-mcp-plugin token)))))
+                                  (if (auto-connect?)
+                                    (rx/of (connect-mcp)
+                                           (init-mcp-plugin token))
+                                    (rx/of (init-mcp-plugin token))))))
                 (rx/empty))
 
               (->> mbc/stream

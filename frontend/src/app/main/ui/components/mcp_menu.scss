@@ -16,7 +16,16 @@
 }
 
 .dashboard {
-  margin-inline: var(--sp-l);
+  margin: var(--sp-m);
+  padding: var(--sp-xs) var(--sp-s);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: var(--sp-s);
+}
+
+// The dashboard card sits at the bottom of the sidebar: open the menu upwards.
+.dashboard .toolbar-mcp-menu {
+  top: auto;
+  bottom: $sz-36;
 }
 
 .toolbar-mcp-button {
